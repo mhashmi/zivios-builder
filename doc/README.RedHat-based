@@ -1,0 +1,84 @@
+Zivios Red Hat Based Software Builder
+Author: Mustafa A. Hashmi <mhashmi@zivios.org>
+-------------------------------------------------------------
+
+The following build instructions were tested on CentOS 5 (final).
+
+Changes may be needed in the Makefiles or helper scripts when
+compiling for additional architectures or distributions.
+
+The instructions assume that the zivios-builder package was
+extracted in /usr/local/src. If you find errors in the
+documentation or extend the builder to support additional
+architectures and/or distributions, please share the changes
+you make via patches sent to zivios-devel@lists.zivios.org
+-------------------------------------------------------------
+
+Update your base system via:
+
+  yum update
+
+Required software:
+
+  yum install make gcc perl libtool-ltdl-devel libtool gcc-c++ pam-devel patch libXt-devel
+
+Note: you may need to install the following RPM: 
+
+  http://download.fedora.redhat.com/pub/epel/5/i386/epel-release-5-3.noarch.rpm
+
+Software compilation: 
+
+  cd /usr/local/src/zivios-builder/software/zlib ; make
+  cd ../openssl ; make
+  cd ../oracle-bdb ; make 
+  echo '/opt/zivios/heimdal/lib' > /etc/ld.so.conf.d/heimdal.conf ; ldconfig
+  cd ../heimdal
+
+Ensure no symlink exists pointing to any of the Makefile.stage0x.
+
+  rm Makefile ; ln -s Makefile.stage01 Makefile ; make
+  cd ../cyrus-sasl ; make
+  cd ../openldap ; make
+  cd ../heimdal ; make allclean ; rm Makefile ; ln -s Makefile.stage02 Makefile ; make
+  cd ../openldap ; make smbk5pwd
+  cd ../isc-bind ; make
+
+We are done with the primary infrastructure packages. We now compile the apache
+web server alongside all libraries that PHP needs. Once all PHP prerequisties have
+been met, we'll compile PHP.
+
+Note: php links statically to the libs in question. We hence provide additional packages
+only for httpd & php.
+
+  cd ../libssh2 ; make
+  cd ../iconv ; make
+  cd ../expat ; make
+  cd ../httpd ; make
+  cd ../libxml2 ; make
+  cd ../libxslt ; make
+  cd ../ncurses ; make
+  cd ../mysql ; make
+  cd ../libpng ; make
+  cd ../libjpeg ; make
+  cd ../freetype ; make
+  cd ../libmcrypt ; make
+  cd ../readline ; make
+  cd ../gettext ; make
+  cd ../pcre ; make
+  cd ../curl ; make
+  cd ../imapc ; make
+  cd ../php ; make
+
+All packages have been built at this point. We are ready to start packaging Zivios as per
+the distribution requirements.
+
+Package creation is beyond the scope of this document. Sample init scripts have however
+been provided for CentOS 5.3, Debian Lenny 5 and Ubuntu Hardy 8.04 LTS. You should consult
+a good package building howto for your distribution to get started.
+
+Note: It is entirely possible to run Zivios on the same system where you have built the
+source packages. To do so however would mean running Zivios panel from the source repository,
+as well as some minor changes to the installer module.
+
+Questions, suggestions and general feedback is welcome. Please direct them to:
+  zivios-devel@lists.zivios.org

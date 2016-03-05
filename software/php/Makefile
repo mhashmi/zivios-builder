@@ -1,0 +1,271 @@
+MAKE ?= make
+MAKEARGS ?= 
+PHP_ROOT := $(shell pwd)
+BUILD_ROOT ?= $(shell cd $(PHP_ROOT)/../..; pwd)
+BUILD_PLATFORM ?= $(shell sh $(BUILD_ROOT)/buildhelpers/platform.sh distroarch)
+
+ifeq ($(BUILD_PLATFORM), )
+	BUILD_PLATFORM := "UNKNOWN"
+endif
+
+ifeq ($(BUILD_PLATFORM), Ubuntu-x86_64)
+	PLAT := x86_64-pc-linux-gnu
+endif
+
+ifeq ($(BUILD_PLATFORM), Debian-x86_64)
+	PLAT := x86_64-pc-linux-gnu
+endif
+
+ifeq ($(PLAT), )
+	PLAT := i386-pc-linux-gnu
+endif
+
+ZIVIOS_HOME ?= /opt/zivios
+PHP_VERSION ?= 5.3.2
+PHP_TGZ_TARGET := $(BUILD_ROOT)/packagebuilds/$(BUILD_PLATFORM)/php/php-$(PHP_VERSION).tgz
+PHP_SOURCE := $(PHP_ROOT)/php-$(PHP_VERSION)
+PHP_BASE_DIR ?= $(ZIVIOS_HOME)/php-$(PHP_VERSION)
+
+HTTPD_VERSION ?= 2.2.14
+HTTPD_BASE_DIR ?= $(ZIVIOS_HOME)/httpd-$(HTTPD_VERSION)
+HTTPD_LIB_DIR ?= $(HTTPD_BASE_DIR)/lib
+HTTPD_INC_DIR ?= $(HTTPD_BASE_DIR)/include
+
+OPENSSL_VERSION ?= 0.9.8l
+OPENSSL_BASE_DIR ?= $(ZIVIOS_HOME)/openssl-$(OPENSSL_VERSION)
+OPENSSL_LIB_DIR ?= $(OPENSSL_BASE_DIR)/lib
+OPENSSL_INC_DIR ?= $(OPENSSL_BASE_DIR)/include
+
+LIBXML2_VERSION ?= 2.7.6
+LIBXML2_BASE_DIR ?= $(ZIVIOS_HOME)/libxml2-$(LIBXML2_VERSION)
+LIBXML2_LIB_DIR ?= $(LIBXML2_BASE_DIR)/lib
+LIBXML2_INC_DIR ?= $(LIBXML2_BASE_DIR)/include
+
+LIBXSLT_VERSION ?= 1.1.26
+LIBXSLT_BASE_DIR ?= $(ZIVIOS_HOME)/libxslt-$(LIBXSLT_VERSION)
+LIBXSLT_LIB_DIR ?= $(LIBXSLT_BASE_DIR)/lib
+LIBXSLT_INC_DIR ?= $(LIBXSLT_BASE_DIR)/include
+
+CURL_VERSION ?= 7.20.0
+CURL_BASE_DIR ?= $(ZIVIOS_HOME)/curl-$(CURL_VERSION)
+CURL_LIB_DIR ?= $(CURL_BASE_DIR)/lib
+CURL_INC_DIR ?= $(CURL_BASE_DIR)/include
+
+LDAP_VERSION ?= 2.4.21
+LDAP_BASE_DIR ?= $(ZIVIOS_HOME)/openldap-$(LDAP_VERSION)
+LDAP_LIB_DIR ?= $(LDAP_BASE_DIR)/lib
+LDAP_INC_DIR ?= $(LDAP_BASE_DIR)/include
+
+LIBPNG_VERSION ?= 1.4.0
+LIBPNG_BASE_DIR ?= $(ZIVIOS_HOME)/libpng-$(LIBPNG_VERSION)
+LIBPNG_LIB_DIR ?= $(LIBPNG_BASE_DIR)/lib
+LIBPNG_INC_DIR ?= $(LIBPNG_BASE_DIR)/include
+
+JPEG_VERSION ?= 8
+JPEG_BASE_DIR ?= $(ZIVIOS_HOME)/libjpeg-$(JPEG_VERSION)
+JPEG_LIB_DIR ?= $(JPEG_BASE_DIR)/lib
+JPEG_INC_DIR ?= $(JPEG_BASE_DIR)/include
+
+FREETYPE_VERSION ?= 2.3.12
+FREETYPE_BASE_DIR ?= $(ZIVIOS_HOME)/freetype-$(FREETYPE_VERSION)
+FREETYPE_LIB_DIR ?= $(FREETYPE_BASE_DIR)/lib
+FREETYPE_INC_DIR ?= $(FREETYPE_BASE_DIR)/include
+
+MYSQL_VERSION ?= 5.1.44
+MYSQL_BASE_DIR ?= $(ZIVIOS_HOME)/mysql-$(MYSQL_VERSION)
+MYSQL_LIB_DIR ?= $(MYSQL_BASE_DIR)/lib
+MYSQL_INC_DIR ?= $(MYSQL_BASE_DIR)/include
+
+GETTEXT_VERSION ?= 0.17
+GETTEXT_BASE_DIR ?= $(ZIVIOS_HOME)/gettext-$(GETTEXT_VERSION)
+GETTEXT_LIB_DIR ?= $(GETTEXT_BASE_DIR)/lib
+GETTEXT_INC_DIR ?= $(GETTEXT_BASE_DIR)/include
+
+ZLIB_VERSION ?= 1.2.3
+ZLIB_BASE_DIR ?= $(ZIVIOS_HOME)/zlib-$(ZLIB_VERSION)
+ZLIB_LIB_DIR ?= $(ZLIB_BASE_DIR)/lib
+ZLIB_INC_DIR ?= $(ZLIB_BASE_DIR)/include
+
+MCRYPT_VERSION ?= 2.5.8
+MCRYPT_BASE_DIR ?= $(ZIVIOS_HOME)/libmcrypt-$(MCRYPT_VERSION)
+MCRYPT_LIB_DIR ?= $(MCRYPT_BASE_DIR)/lib
+MCRYPT_INC_DIR ?= $(MCRYPT_BASE_DIR)/include
+
+READLINE_VERSION ?= 6.1
+READLINE_BASE_DIR ?= $(ZIVIOS_HOME)/readline-$(READLINE_VERSION)
+READLINE_LIB_DIR ?= $(READLINE_BASE_DIR)/lib
+READLINE_INC_DIR ?= $(READLINE_BASE_DIR)/include
+
+NCURSES_VERSION ?= 5.7
+NCURSES_BASE_DIR ?= $(ZIVIOS_HOME)/ncurses-$(NCURSES_VERSION)
+NCURSES_LIB_DIR ?= $(NCURSES_BASE_DIR)/lib
+NCURSES_INC_DIR ?= $(NCURSES_BASE_DIR)/include
+
+EXPAT_VERSION ?= 2.0.1
+EXPAT_BASE_DIR ?= $(ZIVIOS_HOME)/expat-$(EXPAT_VERSION)
+EXPAT_LIB_DIR ?= $(EXPAT_BASE_DIR)/lib
+EXPAT_INC_DIR ?= $(EXPAT_BASE_DIR)/include
+
+HEIMDAL_VERSION ?= 1.3.1
+HEIMDAL_BASE_DIR ?= $(ZIVIOS_HOME)/heimdal-$(HEIMDAL_VERSION)
+HEIMDAL_LIB_DIR ?= $(HEIMDAL_BASE_DIR)/lib
+HEIMDAL_INC_DIR ?= $(HEIMDAL_BASE_DIR)/include
+
+SASL_VERSION ?= 2.1.22
+SASL_BASE_DIR ?= $(ZIVIOS_HOME)/cyrus-sasl-$(SASL_VERSION)
+SASL_LIB_DIR ?= $(SASL_BASE_DIR)/lib
+SASL_INC_DIR ?= $(SASL_BASE_DIR)/include
+
+PCRE_VERSION ?= 8.01
+PCRE_BASE_DIR ?= $(ZIVIOS_HOME)/pcre-$(PCRE_VERSION)
+PCRE_LIB_DIR ?= $(PCRE_BASE_DIR)/lib
+PCRE_INC_DIR ?= $(PCRE_BASE_DIR)/include
+
+MYSQL_VERSION ?= 5.1.44
+MYSQL_BASE_DIR ?= $(ZIVIOS_HOME)/mysql-$(MYSQL_VERSION)
+MYSQL_LIB_DIR ?= $(MYSQL_BASE_DIR)/lib
+MYSQL_INC_DIR ?= $(MYSQL_BASE_DIR)/include
+
+LIBSSH2_VERSION ?= 1.2.4
+LIBSSH2_BASE_DIR ?= $(ZIVIOS_HOME)/libssh2-$(LIBSSH_VERSION)
+LIBSSH2_LIB_DIR ?= $(LIBSSH_BASE_DIR)/lib
+LIBSSH2_INC_DIR ?= $(LIBSSH_BASE_DIR)/include
+
+ICONV_VERSION ?= 1.13.1
+ICONV_BASE_DIR ?= $(ZIVIOS_HOME)/iconv-$(ICONV_VERSION)
+ICONV_LIB_DIR ?= $(ICONV_BASE_DIR)/lib
+ICONV_INC_DIR ?= $(ICONV_BASE_DIR)/include
+
+IMAPC_VERSION ?= 2007e
+IMAPC_BASE_DIR ?= $(ZIVIOS_HOME)/imapc-$(IMAPC_VERSION)
+
+# PHP extensions
+MEMCACHE_VERSION ?= 2.2.5
+APC_VERSION ?= 3.1.3p1
+SSH_VERSION ?= 0.11.0
+NCURSES_EXT_VERSION ?= 1.0.1
+
+ifeq ($(BUILD_PLATFORM), )
+        BUILD_PLATFORM := "UNKNOWN"
+endif
+
+all: build modules tar
+
+build:
+	(tar xjf src/php-$(PHP_VERSION).tar.bz2; \
+	cd php-$(PHP_VERSION); \
+	LDFLAGS="-L$(OPENSSL_LIB_DIR) -Wl,-rpath,$(OPENSSL_LIB_DIR) -L$(LDAP_LIB_DIR) -Wl,-rpath,$(LDAP_LIB_DIR) -L$(LIBPNG_LIB_DIR) -L$(JPEG_LIB_DIR) -L$(MYSQL_LIB_DIR) -L$(GETTEXT_LIB_DIR) -L$(ZLIB_LIB_DIR) -Wl,-rpath,$(ZLIB_LIB_DIR) -L$(LIBXML2_LIB_DIR) -L$(LIBXSLT_LIB_DIR) -L$(CURL_LIB_DIR) -L$(MCRYPT_LIB_DIR) -L$(HEIMDAL_LIB_DIR) -L$(SASL_LIB_DIR) -Wl,-rpath,$(SASL_LIB_DIR) -L$(PCRE_LIB_DIR) -Wl,-rpath,$(PCRE_LIB_DIR) -L$(MYSQL_LIB_DIR) -Wl,-rpath,$(MYSQL_LIB_DIR) -L$(ICONV_LIB_DIR) -Wl,-rpath,$(ICONV_LIB_DIR)" \
+	LD_LIBRARY_PATH=$(OPENSSL_LIB_DIR):$(LDAP_LIB_DIR):$(LIBPNG_LIB_DIR):$(JPEG_LIB_DIR):$(MYSQL_LIB_DIR):$(GETTEXT_LIB_DIR):$(ZLIB_LIB_DIR):$(LIBXML2_LIB_DIR):$(LIBXSLT_LIB_DIR):$(CURL_LIB_DIR):$(MCRYPT_LIB_DIR):$(HEIMDAL_LIB_DIR):$(SASL_LIB_DIR):$(PCRE_LIB_DIR):$(MYSQL_LIB_DIR):$(ICONV_LIB_DIR) \
+	CPPFLAGS="-I$(OPENSSL_INC_DIR) -I$(LDAP_INC_DIR) -I$(LIBPNG_INC_DIR) -I$(JPEG_INC_DIR) -I$(MYSQL_INC_DIR) -I$(GETTEXT_INC_DIR) -I$(ZLIB_INC_DIR) -I$(LIBXML2_INC_DIR) -I$(LIBXSLT_INC_DIR) -I$(CURL_INC_DIR) -I$(MCRYPT_INC_DIR) -I$(HEIMDAL_INC_DIR) -I$(SASL_INC_DIR) -I$(PCRE_INC_DIR) -I$(MYSQL_INC_DIR) -I$(ICONV_LIB_DIR)" \
+	./configure --prefix=$(ZIVIOS_HOME)/php-$(PHP_VERSION) \
+	--disable-all \
+	--enable-shared=no \
+	--enable-static=yes \
+	--enable-embed=shared \
+	--with-config-file-path=$(PHP_BASE_DIR)/etc \
+	--with-apxs2=$(HTTPD_BASE_DIR)/bin/apxs \
+	--with-zlib=$(ZLIB_BASE_DIR) \
+	--with-zlib-dir=$(ZLIB_BASE_DIR) \
+	--with-sqlite \
+	--with-libxml-dir=$(LIBXML2_BASE_DIR) \
+	--enable-libxml --enable-static=libxml \
+	--with-regex=system \
+	--with-pcre-regex=$(PCRE_BASE_DIR) \
+	--with-pcre-dir=$(PCRE_BASE_DIR) \
+	--enable-xml --enable-static=xml \
+	--with-xsl=$(LIBXSLT_BASE_DIR) \
+	--enable-static=xsl \
+	--enable-dom --enable-static=dom \
+	--with-openssl=$(OPENSSL_BASE_DIR) \
+	--with-openssl-dir=$(OPENSSL_BASE_DIR) \
+	--with-ldap=$(LDAP_BASE_DIR) \
+	--with-curl=$(CURL_BASE_DIR) \
+	--with-gd \
+	--with-png-dir=$(LIBPNG_BASE_DIR) \
+	--with-jpeg-dir=$(JPEG_BASE_DIR) \
+	--with-freetype-dir=$(FREETYPE_BASE_DIR) \
+	--with-iconv=$(ICONV_BASE_DIR) \
+	--with-imap=$(IMAPC_BASE_DIR) \
+	--with-imap-ssl=$(OPENSSL_BASE_DIR) \
+	--with-gettext=$(GETTEXT_BASE_DIR) \
+	--enable-static=iconv \
+	--with-mysql=$(MYSQL_BASE_DIR) \
+	--with-mysqli=$(MYSQL_BASE_DIR)/bin/mysql_config \
+	--with-mcrypt=$(MCRYPT_BASE_DIR) \
+	--enable-pdo \
+	--with-pdo-mysql=$(MYSQL_BASE_DIR) \
+	--enable-gd-native-ttf \
+	--enable-filter \
+	--enable-session \
+	--enable-simplexml \
+	--enable-inline-optimization \
+	--enable-zend-multibyte \
+	--enable-calendar \
+	--enable-sockets \
+	--enable-sysvmsg \
+	--enable-sysvsem \
+	--enable-sysvshm \
+	--enable-json \
+	--with-pear=$(PHP_BASE_DIR)/lib/pear \
+	--enable-mbstring; \
+	LD_RUN_PATH=$(OPENSSL_LIB_DIR):$(LDAP_LIB_DIR):$(LIBPNG_LIB_DIR):$(JPEG_LIB_DIR):$(MYSQL_LIB_DIR):$(GETTEXT_LIB_DIR):$(ZLIB_LIB_DIR):$(LIBXML2_LIB_DIR):$(LIBXSLT_LIB_DIR):$(CURL_LIB_DIR):$(MCRYPT_LIB_DIR):$(HEIMDAL_LIB_DIR):$(SASL_LIB_DIR):$(PCRE_LIB_DIR):$(ICONV_LIB_DIR) $(MAKE) $(MAKEARGS); \
+	LD_RUN_PATH=$(OPENSSL_LIB_DIR):$(LDAP_LIB_DIR):$(LIBPNG_LIB_DIR):$(JPEG_LIB_DIR):$(MYSQL_LIB_DIR):$(GETTEXT_LIB_DIR):$(ZLIB_LIB_DIR):$(LIBXML2_LIB_DIR):$(LIBXSLT_LIB_DIR):$(CURL_LIB_DIR):$(MCRYPT_LIB_DIR):$(HEIMDAL_LIB_DIR):$(SASL_LIB_DIR):$(PCRE_LIB_DIR):$(ICONV_LIB_DIR) $(MAKE) install STRIP="")
+	(cd $(ZIVIOS_HOME); ln -s php-$(PHP_VERSION) php)
+
+modules:
+	(tar xzf src/memcache-$(MEMCACHE_VERSION).tgz; \
+	cd memcache-$(MEMCACHE_VERSION); \
+	$(ZIVIOS_HOME)/php/bin/phpize; \
+	./configure --with-php-config=$(ZIVIOS_HOME)/php/bin/php-config \
+	--with-zlib-dir=$(ZLIB_BASE_DIR); \
+	$(MAKE); \
+	$(MAKE) install)
+	cd ../;
+	(tar xzf src/APC-$(APC_VERSION).tgz; \
+	cd APC-$(APC_VERSION); \
+	$(ZIVIOS_HOME)/php/bin/phpize; \
+	CPPFLAGS="-I$(PCRE_INC_DIR)" \
+	./configure --with-php-config=$(ZIVIOS_HOME)/php/bin/php-config; \
+	$(MAKE); \
+	$(MAKE) install)
+	cd ../;
+	(tar xzf src/ssh2-$(SSH_VERSION).tgz; \
+	cd ssh2-$(SSH_VERSION); \
+	patch -p0 < ../patches/ssh2.patch; \
+	$(ZIVIOS_HOME)/php/bin/phpize; \
+	./configure --with-php-config=$(ZIVIOS_HOME)/php/bin/php-config \
+	--with-lib-dir=$(LIBSSH2_LIB_DIR) \
+	--with-ssh2=$(ZIVIOS_HOME)/libssh2-$(LIBSSH2_VERSION); \
+	$(MAKE); \
+	$(MAKE) install)
+	(tar xzf src/ncurses-$(NCURSES_EXT_VERSION).tgz; \
+	cd ncurses-$(NCURSES_EXT_VERSION); \
+	$(ZIVIOS_HOME)/php/bin/phpize; \
+	CPPFLAGS="-I$(NCURSES_INC_DIR)" \
+	./configure --with-php-config=$(ZIVIOS_HOME)/php/bin/php-config \
+	--with-ncurses=/opt/zivios/ncurses \
+	--with-libdir=lib; \
+	$(MAKE); \
+	$(MAKE) install)
+	cd ../;
+
+tar:
+	mkdir -p $(BUILD_ROOT)/packagebuilds/$(BUILD_PLATFORM)/php
+	(cd $(ZIVIOS_HOME); tar czf $(PHP_TGZ_TARGET) php-$(PHP_VERSION))
+
+clean:
+	/bin/rm -rf php-$(PHP_VERSION)
+
+allclean: clean cleanmodules
+	/bin/rm -rf $(ZIVIOS_HOME)/php-$(PHP_VERSION)
+	/bin/rm -rf $(ZIVIOS_HOME)/php
+
+cleanmodules:
+	/bin/rm -rf APC-$(APC_VERSION)
+	/bin/rm -rf memcache-$(MEMCACHE_VERSION)
+	/bin/rm -rf ssh2-$(SSH_VERSION)
+	/bin/rm -rf ncurses-$(NCURSES_EXT_VERSION)
+	/bin/rm package.xml
+
+plat:
+	@echo "Platform is $(PLAT)"

@@ -1,0 +1,185 @@
+>From a4847f27225e1a062723173ba100906fa7f1cd74 Mon Sep 17 00:00:00 2001
+From: Mathieu Gauthier-Lafaye <mathieu.gauthierlafaye@gmail.com>
+Date: Sat, 18 Apr 2009 14:05:08 +0200
+Subject: [PATCH] ldap correction 1
+
+---
+ contrib/dlz/drivers/dlz_ldap_driver.c         |    8 ++--
+ contrib/dlz/drivers/include/dlz/sdlz_helper.h |   13 +++++---
+ contrib/dlz/drivers/sdlz_helper.c             |   39 +++++++++++++------------
+ 3 files changed, 32 insertions(+), 28 deletions(-)
+
+diff --git a/contrib/dlz/drivers/dlz_ldap_driver.c b/contrib/dlz/drivers/dlz_ldap_driver.c
+index 35d7548..fc83bd3 100644
+--- a/contrib/dlz/drivers/dlz_ldap_driver.c
++++ b/contrib/dlz/drivers/dlz_ldap_driver.c
+@@ -1094,22 +1094,22 @@ dlz_ldap_create(const char *dlzname, unsigned int argc, char *argv[],
+ 		/* how many queries were passed in from config file? */
+ 		switch(argc) {
+ 		case 9:
+-			result = build_sqldbinstance(ns_g_mctx, NULL, NULL,
++			result = build_sqldbinstance2(ns_g_mctx, "$", NULL, NULL,
+ 						     NULL, argv[7], argv[8],
+ 						     NULL, &dbi);
+ 			break;
+ 		case 10:
+-			result = build_sqldbinstance(ns_g_mctx, NULL, NULL,
++			result = build_sqldbinstance2(ns_g_mctx, "$", NULL, NULL,
+ 						     argv[9], argv[7], argv[8],
+ 						     NULL, &dbi);
+ 			break;
+ 		case 11:
+-			result = build_sqldbinstance(ns_g_mctx, argv[10], NULL,
++			result = build_sqldbinstance2(ns_g_mctx, "$", argv[10], NULL,
+ 						     argv[9], argv[7], argv[8],
+ 						     NULL, &dbi);
+ 			break;
+ 		case 12:
+-			result = build_sqldbinstance(ns_g_mctx, argv[10],
++			result = build_sqldbinstance2(ns_g_mctx, "$", argv[10],
+ 						     argv[11], argv[9],
+ 						     argv[7], argv[8],
+ 						     NULL, &dbi);
+diff --git a/contrib/dlz/drivers/include/dlz/sdlz_helper.h b/contrib/dlz/drivers/include/dlz/sdlz_helper.h
+index 764a05a..53dd563 100644
+--- a/contrib/dlz/drivers/include/dlz/sdlz_helper.h
++++ b/contrib/dlz/drivers/include/dlz/sdlz_helper.h
+@@ -95,10 +95,11 @@ char *
+ sdlzh_build_querystring(isc_mem_t *mctx, query_list_t *querylist);
+ 
+ isc_result_t
+-sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char *allnodes_str,
+-			  const char *allowxfr_str, const char *authority_str,
+-			  const char *findzone_str, const char *lookup_str,
+-			  const char *countzone_str, dbinstance_t **dbi);
++sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char * split_str,
++			  const char *allnodes_str, const char *allowxfr_str,
++			  const char *authority_str, const char *findzone_str,
++			  const char *lookup_str, const char *countzone_str,
++			  dbinstance_t **dbi);
+ 
+ void
+ sdlzh_destroy_sqldbinstance(dbinstance_t *dbi);
+@@ -109,9 +110,11 @@ sdlzh_get_parameter_value(isc_mem_t *mctx, const char *input, const char* key);
+ /* Compatability with existing DLZ drivers */
+ 
+ #define	build_querystring	sdlzh_build_querystring
+-#define	build_sqldbinstance	sdlzh_build_sqldbinstance
+ #define	destroy_sqldbinstance	sdlzh_destroy_sqldbinstance
+ 
++#define	build_sqldbinstance(mc,an,ax,at,fz,lk,cz,di)	sdlzh_build_sqldbinstance(mc,"%",an,ax,at,fz,lk,cz,di)
++#define build_sqldbinstance2 sdlzh_build_sqldbinstance
++
+ #define	getParameterValue(x,y)  sdlzh_get_parameter_value(ns_g_mctx, (x), (y))
+ 
+ #endif /* SDLZHELPER_H */
+diff --git a/contrib/dlz/drivers/sdlz_helper.c b/contrib/dlz/drivers/sdlz_helper.c
+index ea33db1..c19658a 100644
+--- a/contrib/dlz/drivers/sdlz_helper.c
++++ b/contrib/dlz/drivers/sdlz_helper.c
+@@ -107,8 +107,8 @@ destroy_querylist(isc_mem_t *mctx, query_list_t **querylist)
+ 
+ /*% constructs a query list by parsing a string into query segments */
+ static isc_result_t
+-build_querylist(isc_mem_t *mctx, const char *query_str, char **zone,
+-		char **record, char **client, query_list_t **querylist,
++build_querylist(isc_mem_t *mctx, const char *split_str, const char *query_str,
++		char **zone, char **record, char **client, query_list_t **querylist,
+ 		unsigned int flags)
+ {
+ 	isc_result_t result;
+@@ -171,7 +171,7 @@ build_querylist(isc_mem_t *mctx, const char *query_str, char **zone,
+ 		 */
+ 		tseg->sql = isc_mem_strdup(mctx,
+ 					   isc_string_separate(&right_str,
+-							       "%"));
++							       split_str));
+ 		if (tseg->sql == NULL) {
+ 			/* no memory, clean everything up. */
+ 			result = ISC_R_NOMEMORY;
+@@ -337,10 +337,11 @@ sdlzh_build_querystring(isc_mem_t *mctx, query_list_t *querylist)
+ 
+ /*% constructs a sql dbinstance (DBI) */
+ isc_result_t
+-sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char *allnodes_str,
+-			 const char *allowxfr_str, const char *authority_str,
+-			 const char *findzone_str, const char *lookup_str,
+-			 const char *countzone_str, dbinstance_t **dbi)
++sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char *split_str, 
++		  const char *allnodes_str, const char *allowxfr_str,
++		  const char *authority_str, const char *findzone_str,
++		  const char *lookup_str, const char *countzone_str,
++		  dbinstance_t **dbi)
+ {
+ 
+ 	isc_result_t result;
+@@ -385,8 +386,8 @@ sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char *allnodes_str,
+ 	}
+ 
+ 	/* build the all nodes query list */
+-	result = build_querylist(mctx, allnodes_str, &db->zone,
+-				 &db->record, &db->client,
++	result = build_querylist(mctx, split_str, allnodes_str,
++				 &db->zone, &db->record, &db->client,
+ 				 &db->allnodes_q, SDLZH_REQUIRE_ZONE);
+ 	/* if unsuccessful, log err msg and cleanup */
+ 	if (result != ISC_R_SUCCESS) {
+@@ -397,8 +398,8 @@ sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char *allnodes_str,
+ 	}
+ 
+ 	/* build the allow zone transfer query list */
+-	result = build_querylist(mctx, allowxfr_str, &db->zone,
+-				 &db->record, &db->client,
++	result = build_querylist(mctx, split_str, allowxfr_str,
++				 &db->zone, &db->record, &db->client,
+ 				 &db->allowxfr_q,
+ 				 SDLZH_REQUIRE_ZONE | SDLZH_REQUIRE_CLIENT);
+ 	/* if unsuccessful, log err msg and cleanup */
+@@ -410,8 +411,8 @@ sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char *allnodes_str,
+ 	}
+ 
+ 	/* build the authority query, query list */
+-	result = build_querylist(mctx, authority_str, &db->zone,
+-				 &db->record, &db->client,
++	result = build_querylist(mctx, split_str, authority_str,
++				 &db->zone, &db->record, &db->client,
+ 				 &db->authority_q, SDLZH_REQUIRE_ZONE);
+ 	/* if unsuccessful, log err msg and cleanup */
+ 	if (result != ISC_R_SUCCESS) {
+@@ -422,8 +423,8 @@ sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char *allnodes_str,
+ 	}
+ 
+ 	/* build findzone query, query list */
+-	result = build_querylist(mctx, findzone_str, &db->zone,
+-				 &db->record, &db->client,
++	result = build_querylist(mctx, split_str, findzone_str,
++				 &db->zone, &db->record, &db->client,
+ 				 &db->findzone_q, SDLZH_REQUIRE_ZONE);
+ 	/* if unsuccessful, log err msg and cleanup */
+ 	if (result != ISC_R_SUCCESS) {
+@@ -434,8 +435,8 @@ sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char *allnodes_str,
+ 	}
+ 
+ 	/* build countzone query, query list */
+-	result = build_querylist(mctx, countzone_str, &db->zone,
+-				 &db->record, &db->client,
++	result = build_querylist(mctx, split_str, countzone_str,
++				 &db->zone, &db->record, &db->client,
+ 				 &db->countzone_q, SDLZH_REQUIRE_ZONE);
+ 	/* if unsuccessful, log err msg and cleanup */
+ 	if (result != ISC_R_SUCCESS) {
+@@ -446,8 +447,8 @@ sdlzh_build_sqldbinstance(isc_mem_t *mctx, const char *allnodes_str,
+ 	}
+ 
+ 	/* build lookup query, query list */
+-	result = build_querylist(mctx, lookup_str, &db->zone,
+-				 &db->record, &db->client,
++	result = build_querylist(mctx, split_str, lookup_str,
++				 &db->zone, &db->record, &db->client,
+ 				 &db->lookup_q, SDLZH_REQUIRE_RECORD);
+ 	/* if unsuccessful, log err msg and cleanup */
+ 	if (result != ISC_R_SUCCESS) {
+-- 
+1.5.6.3
+
+

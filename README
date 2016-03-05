@@ -1,0 +1,8 @@
+The Zivios Builder 
+------------------
+The Zivios Build Framework is meant as a means for system 
+administrators to rollout their own packages for Zivios. 
+
+Depending on your Linux distribution, certain packages, libraries
+and prerequisite would need to be put in place; please see the
+doc/ folder for distribution specific details.

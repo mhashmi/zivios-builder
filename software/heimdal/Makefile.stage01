@@ -1,0 +1,53 @@
+MAKE ?= make
+MAKEARGS ?= -j2
+HEIMDAL_ROOT := $(shell pwd)
+BUILD_ROOT ?= $(shell cd $(HEIMDAL_ROOT)/../..; pwd)
+BUILD_PLATFORM ?= $(shell sh $(BUILD_ROOT)/buildhelpers/platform.sh distroarch)
+
+ZIVIOS_HOME ?= /opt/zivios
+HEIMDAL_VERSION ?=  1.3.1
+HEIMDAL_TGZ_TARGET := $(BUILD_ROOT)/packagebuilds/$(BUILD_PLATFORM)/heimdal/heimdal-$(HEIMDAL_VERSION).tgz
+HEIMDAL_SOURCE := $(HEIMDAL_ROOT)/heimdal-$(HEIMDAL_VERSION)
+
+OPENSSL_VERSION ?= 0.9.8l
+OPENSSL_LIB_DIR ?= $(ZIVIOS_HOME)/openssl-$(OPENSSL_VERSION)/lib
+HEIMDAL_LIB_DIR ?= $(ZIVIOS_HOME)/heimdal-$(HEIMDAL_VERSION)/lib
+
+ifeq ($(BUILD_PLATFORM), )
+	BUILD_PLATFORM := "UNKNOWN"
+endif
+
+all: build
+
+build:
+	(tar xzf src/heimdal-$(HEIMDAL_VERSION).tar.gz; \
+	cd heimdal-$(HEIMDAL_VERSION); \
+	CFLAGS="-g -O2 -D_REENTRANT" \
+	CCFLAGS="-g -O2 -D_REENTRANT" \
+	COMPILE_ET="NO" \
+	LDFLAGS="-L$(OPENSSL_LIB_DIR) -Wl,-rpath,$(OPENSSL_LIB_DIR) -L$(HEIMDAL_LIB_DIR) -Wl,-rpath,$(HEIMDAL_LIB_DIR)" \
+	CPPFLAGS="-I$(ZIVIOS_HOME)/openssl-$(OPENSSL_VERSION)/include" \
+	$(ENVMOD) ./configure --prefix=$(ZIVIOS_HOME)/heimdal-$(HEIMDAL_VERSION) \
+	CCFLAGS="-g -O2 -D_REENTRANT" \
+	--sysconfdir=$(ZIVIOS_HOME)/heimdal-$(HEIMDAL_VERSION)/etc \
+	--localstatedir=$(ZIVIOS_HOME)/heimdal-$(HEIMDAL_VERSION)/var \
+	--enable-shared \
+	--enable-pthread-support \
+	--with-openssl=$(ZIVIOS_HOME)/openssl-$(OPENSSL_VERSION) \
+	--disable-berkeley-db \
+	--without-readline \
+	--without-ipv6; \
+	LD_RUN_PATH=$(OPENSSL_LIB_DIR) $(MAKE) $(MAKEARGS); LD_RUN_PATH=$(OPENSSL_LIB_DIR) $(MAKE) install STRIP="")
+	(cd $(ZIVIOS_HOME); ln -s heimdal-$(HEIMDAL_VERSION) heimdal)
+
+tar:
+	mkdir -p $(BUILD_ROOT)/packagebuilds/$(BUILD_PLATFORM)/heimdal
+	(cd $(ZIVIOS_HOME); tar czf $(HEIMDAL_TGZ_TARGET) heimdal-$(HEIMDAL_VERSION))
+
+clean:
+	/bin/rm -rf heimdal-$(HEIMDAL_VERSION)
+
+allclean: clean
+	/bin/rm -rf $(ZIVIOS_HOME)/heimdal-$(HEIMDAL_VERSION)
+	/bin/rm -rf $(ZIVIOS_HOME)/heimdal
+
